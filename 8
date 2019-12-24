@@ -1,0 +1,3 @@
+--function
+--add_tostring
+local t = getmetatable(...) if not t then t = {} setmetatable(..., t) end t.__tostring = function(t) return t.str end return ...

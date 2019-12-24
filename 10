@@ -1,0 +1,17 @@
+--function
+--function_save
+
+-- will be passed a table, and then the filename to use
+local args = {...}
+local t = table.remove(args, 1)
+local file = table.remove(args, 1)
+
+local path = os.getenv("PWD")
+file = io.open(path.."/"..file, "w")
+if file then
+  file:write("--"..t.type.."\n")
+  file:write("--"..(t.name or "").."\n")
+  file:write(t.str)
+  file:close()
+  return true
+end
