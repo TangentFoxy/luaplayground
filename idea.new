@@ -1,0 +1,54 @@
+named files, an universal index loaded by main and option to load a custom
+  index, creating new objects saves them immediately
+option to add and remove things from the index, exit saving new index
+
+default index is lua file in current directory '.luaplayground'
+- format: list, each item is filename, name (stored as global), type
+
+when you change a global whose name is specified, it is your responsibility to
+  make sure that this will be saved (have a marker in-memory in the index for
+  changed items)
+index is stored within itself as name .luaplayground, filename .luaplayground,
+  type '.luaplayground'
+
+if something doesn't have a type, or a saver for that type doesn't exist,
+  attempt to save by calling tostring on, with nil type
+if something doesn't have a type for loading, then load entire file into a plain
+  string
+
+1  function function -- call to create functions from strings
+2  autorun           -- wrap os.exit to save first
+4  function autorun  -- loads autorun types (which means loading a function and
+                        calling it)
+5  function          -- aliases loadfn -> function
+6  note 'original notes' -- first set of notes
+7  note 'new notes'      -- a short todo list
+8  function add_tostring -- adds tostring metamethod to any type (todo: do not
+                            overwrite existing tostring in future!)
+9  function save         -- procedurally calls save functions
+10 function function_save -- saves function types
+11 function autorun_save  -- saves autorun types (wrapper around function_save)
+notice that note types are not loaded/saved currently (these were manually
+  saved)
+
+current main:
+- opens file handles for all files
+- loads all data from all files
+- finds and loads function function
+- loops through data calling any loaded functions
+flaws:
+- will load multiple versions of something, with the older versions first
+- requires everything to be loaded into memory at once
+- requires specific file names that aren't very helpful
+
+new main:
+- only load index file (initially)
+- function loader is defined in main (can be overwritten by one defined in the
+  index file)
+- index file is name-indexed, instead of numerically
+- save function is defined in main, load function is defined in main
+  - called without args will load/save based on default index ?
+  - called with an arg will load/save from specific location ?
+- function saver is defined in main (again, can be overwritten!)
+- default index just has a reference to .luaplayground itself
+  - will create index referencing itself when ran if there is no index!!
