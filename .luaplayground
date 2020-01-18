@@ -1,0 +1,6 @@
+_G[".luaplayground"] = {
+  ["new_function.lua"] = {
+    ["name"] = "fn",
+    ["type"] = "function",
+  },
+}

@@ -1,57 +1,72 @@
---function
---main
+luaplayground = {
+  path = os.getenv("PWD"),
 
--- opens all numerically indexed files starting at 1,
---  loads all types by functions specified by type name
+  load = function(new_path)
+    if new_path then luaplayground.path = new_path end
+    local file = io.open(luaplayground.path.."/"..".luaplayground", "r")
+    if file then loadstring(file:read("*all"))() file:close() file = nil end
+    if not _G[".luaplayground"] then _G[".luaplayground"] = {} end
 
--- get all file handles
-local files = {}
-local path = os.getenv("PWD")
-local i = 1
-repeat
-  local file = io.open(path.."/"..i, "r")
-  table.insert(files, file)
-  i = i + 1
-until not file
-print("Opened "..tostring(i - 2).." files.")
+    local files = {}
+    for file_name, meta in pairs(_G[".luaplayground"]) do
+      file = io.open(luaplayground.path.."/"..file_name, "r")
+      if file then
+        files[file_name] = { name = meta.name, type = meta.type, file = file }
+      end
+    end
 
--- copy data and close file handles
-local data = {}
-local loader
-for i, file in ipairs(files) do
-  local _type = file:read("*line")
-  local name = file:read("*line")
-  if _type and name then
-    local t = { type = _type:sub(3), name = name:sub(3), file = i }
-    t.str = file:read("*all")
-    table.insert(data, t)
-    if t.name == "function" then
-      loader = loadstring(t.str)
+    while next(files) do
+      for file_name, data in pairs(files) do
+        if _G[data.type] then
+          _G[data.type](data)
+          files[file_name] = nil
+        end
+      end
+    end
+  end,
+
+  save = function(meta, file_name, skip_config)
+    -- run without args to save all
+    if not skip_config then
+      -- save config!
+    end
+    if meta then
+      file_name = file_name or meta.name
+      _G[".luaplayground"][file_name] = meta
+      local t = _G[meta.name]
+      local _save = _G[meta.type.."_save"]
+      if _save then
+        return _save(t, file_name)
+      end
+      local file = io.open(luaplayground.path.."/"..file_name, "w")
+      if file then
+        file:write("--"..tostring(t.type).."\n")
+        file:write("--"..tostring(t.name).."\n")
+        file:write(t.str or t)
+        file:close()
+        return true
+      end
+    else
+      for file_name, meta in pairs(_G[".luaplayground"]) do
+        luaplayground.save(meta, file_name, true)
+      end
     end
   end
-  file:close()
-end
-files = nil
+}
 
--- load functions and keep track of other types
-local others = {}
-for _, t in ipairs(data) do
-  if t.type == "function" then
-    loader(t.name, t.str)
-  else
-    table.insert(others, t)
-  end
+_G["function"] = function(data)
+  local str = data.file:read("*all")
+  data.file:close()
+  local fn = loadstring(str)
+  local t = { str = str, name = data.name, type = data.type }
+  setmetatable(t, { __call = function(_, ...) return fn(...) end })
+  _G[t.name] = t
+  return t
 end
-data = nil
 
--- load other types, printing any errors encountered
---  unloaded files are stored in _UNLOADED, probably shouldn't overwrite these
-for _, t in ipairs(others) do
-  if _G[t.type] then
-    _G[t.type](t.name, t.str)
-  else
-    print("Unable to load type \""..t.type.."\" from file "..t.file..".")
-    if not _UNLOADED then _UNLOADED = {} end
-    _UNLOADED[t.file] = true
-  end
+_G["function_save"] = function(t, file_name)
+  local file = io.open(luaplayground.path.."/"..file_name, "w")
+  if file then file:write(t.str) file:close() return true end
 end
+
+luaplayground.load()

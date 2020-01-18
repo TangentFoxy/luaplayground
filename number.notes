@@ -1,0 +1,9 @@
+11  function  autorun_save   calls function_save
+ 8  function  add_tostring   (obj) adds __tostring metamethod (which uses t.str)
+ 7  note      new notes      mentioned a note function to save notes
+ 6  note      original notes  original idea notes, modified as progressed
+ 5  autorun                   makes global alias for function called loadfn
+ 4  function  autorun         calls function loader, changes its type, runs it,
+                              and returns it
+ 2  autorun                   replaces os.exit with a version running save first
+ 1  function  function        ([name], fn_str)  obj{fn, str, type} & __call(fn)
